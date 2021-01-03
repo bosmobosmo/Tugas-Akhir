@@ -4,6 +4,8 @@ inputfile = sys.argv[1]
 
 junctions = []
 pipes = []
+leak = []
+no_leak = []
 
 source = open(inputfile,'r')
 lines = source.readlines()
@@ -15,6 +17,7 @@ class Node:
         self.name = "NULL"
         self.source = []
         self.dest = []
+        self.flow = 0.0
 
 def make_junctions():
     junc_objs = [Node("Junction") for i in range(len(junctions))]
@@ -75,6 +78,15 @@ def read_data():
         if (ss[0].find("PIPES") > -1):
             pip = True
 
+def get_flow():
+    source = open('./try-results/experiment-simple.csv')
+    lines = source.readlines()
+    source.close()
+
+    ss = lines[0].split(',')
+    for i in range(len(pipes)):
+        pipes[i].flow = ss[i+4]
+        
 read_data()
 
 # print ("PIPES:")
@@ -87,11 +99,13 @@ read_data()
 junctions = make_junctions()
 pipes = make_pipes()
 make_junctions_connections()
+get_flow()
 
-# for i in range(len(pipes)):
-#     print("Pipe name: " + pipes[i].name)
-#     print("Pipe source: " + pipes[i].source[0].name)
-#     print("Pipe destination "  + pipes[i].dest[0].name)
+for i in range(len(pipes)):
+    print("Pipe name: " + pipes[i].name)
+    print("Pipe source: " + pipes[i].source[0].name)
+    print("Pipe destination "  + pipes[i].dest[0].name)
+    print("Flow :" + pipes[i].flow)
 
 # for i in range(len(junctions)):
 #     print("Junction name: " + junctions[i].name)
@@ -101,3 +115,4 @@ make_junctions_connections()
 #     print("Junctions destinations: ")
 #     for j in range(len(junctions[i].dest)):
 #         print (junctions[i].dest[j].name)
+
