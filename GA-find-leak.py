@@ -19,6 +19,20 @@ class Node:
         self.dest = []
         self.flow = 0.0
 
+    def clear_downstream(self):
+        if (self.type == "Junction"):
+            if self.name not in no_leak:
+                no_leak.append(self.name)
+        for i in range(len(self.dest)):
+            self.dest[i].clear_downstream()
+
+    def clear_upstream(self):
+        if (self.type == "Junction"):
+            if self.name not in no_leak:
+                no_leak.append(self.name)
+        for i in range(len(self.source)):
+            self.source[i].clear_upstream()
+
 def make_junctions():
     junc_objs = [Node("Junction") for i in range(len(junctions))]
     for i in range(len(junctions)):
@@ -101,11 +115,16 @@ pipes = make_pipes()
 make_junctions_connections()
 get_flow()
 
-for i in range(len(pipes)):
-    print("Pipe name: " + pipes[i].name)
-    print("Pipe source: " + pipes[i].source[0].name)
-    print("Pipe destination "  + pipes[i].dest[0].name)
-    print("Flow :" + pipes[i].flow)
+pipes[4].clear_upstream()
+
+for i in range(len(no_leak)):
+    print no_leak[i]
+
+# for i in range(len(pipes)):
+#     print("Pipe name: " + pipes[i].name)
+#     print("Pipe source: " + pipes[i].source[0].name)
+#     print("Pipe destination "  + pipes[i].dest[0].name)
+#     print("Flow :" + pipes[i].flow)
 
 # for i in range(len(junctions)):
 #     print("Junction name: " + junctions[i].name)
