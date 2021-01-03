@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: org.addition.epanet.ui.EpanetUI
+Product-Name:  Aware Epanet Port
+Package-Title: org.addition.epanet
+Package-Version: 1.00.00
