@@ -1,11 +1,13 @@
 import sys
+import random
 
 inputfile = sys.argv[1]
+csv = './try-results/experiment-simple.csv' #modify according to simulator results directory
 
+no_leak = []
 junctions = []
 pipes = []
-leak = []
-no_leak = []
+populations = []
 
 source = open(inputfile,'r')
 lines = source.readlines()
@@ -93,7 +95,7 @@ def read_data():
             pip = True
 
 def get_flow():
-    source = open('./try-results/experiment-simple.csv')
+    source = open('./try-results/experiment-simple.csv') 
     lines = source.readlines()
     source.close()
 
@@ -101,6 +103,81 @@ def get_flow():
     for i in range(len(pipes)):
         pipes[i].flow = ss[i+4]
         
+def init_pop():
+    # print(len(pipes))
+    spec = []
+    for i in range(19):
+        del spec [:]
+        for j in range(len(pipes)):
+            spec.append(random.randint(0,1))
+        # print(spec)
+        # print("append")
+        populations.append(spec[:])
+
+def detect_leak(chromosome, line):
+    # print(chromosome)
+    # print(line)
+    leak = []
+    for i in range(len(junctions)):
+        leak.append(junctions[i].name)
+    del no_leak[:]
+    # print (no_leak)
+    for i in range(len(chromosome)):
+        if (chromosome[i] == 1) :
+            # print(i)
+            # print(line[i+4])
+            if (line[i+4] == pipes[i].flow):
+                # print(str(i) +' '+ str(line[i+4]) + ' '+ pipes[i].flow)
+                pipes[i].clear_downstream()
+            else:
+                pipes[i].clear_upstream()
+    # print(no_leak)
+    for i in range(len(no_leak)):
+        leak.remove(no_leak[i])
+    # print(leak)
+    return leak
+
+def fitness(pop, line):
+    # print(pop)
+    # print(line[1])
+    leak = []
+    new_pop = []
+    for i in range(len(pop)):
+        leak.append(detect_leak(pop[i], line))
+    # print (len(pop))
+    # print (len(leak))
+    for i in range(len(pop)):
+        if (line[1] in leak[i]):
+            new_pop.append(pop[i])
+    return new_pop
+
+def sensor_count(chromosome):
+    count = 0
+    for i in range(len(chromosome)):
+        if chromosome[i] == 1:
+            count+=1
+    return count
+
+def GA(pop):
+    source = open(csv)
+    lines = source.readlines()
+    source.close()
+    new_pop = []
+
+    for i in range(1):
+        line = lines[i+9].split(',')
+        # print(len(pop))
+        # print (i)
+        new_pop = fitness(pop, line)
+        
+    # for i in range(len(pop)):
+    #     print(pop[i])
+    # print ('\n')
+    new_pop.sort(key=sensor_count)
+    new_pop = new_pop[:10]
+    # for i in range(len(new_pop)):
+    #     print (new_pop[i])
+
 read_data()
 
 # print ("PIPES:")
@@ -114,11 +191,14 @@ junctions = make_junctions()
 pipes = make_pipes()
 make_junctions_connections()
 get_flow()
+init_pop()
+# for i in range(len(populations)):
+#     print(populations[i])
+GA(populations)
+# pipes[4].clear_upstream()
 
-pipes[4].clear_upstream()
-
-for i in range(len(no_leak)):
-    print no_leak[i]
+# for i in range(len(no_leak)):
+#     print no_leak[i]
 
 # for i in range(len(pipes)):
 #     print("Pipe name: " + pipes[i].name)
