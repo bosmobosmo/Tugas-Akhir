@@ -6,8 +6,8 @@ import random
 
 inputfile = sys.argv[1]
 experimentname = 'experiment-simple'
-resultsdir = sys.argv[2]
-databasedir = sys.argv[2]
+resultsdir = ".\\try-results\\"
+databasedir = ".\\try-results\\"
 databasename = experimentname+'.csv'
 
 ecrange = [0.48,0.52]
