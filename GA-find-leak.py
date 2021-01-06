@@ -3,6 +3,7 @@ import random
 
 inputfile = sys.argv[1]
 csv = './try-results/experiment-simple.csv' #modify according to simulator results directory
+pop_size = int(sys.argv[2])
 
 no_leak = []
 junctions = []
@@ -103,16 +104,16 @@ def get_flow():
     for i in range(len(pipes)):
         pipes[i].flow = ss[i+4]
         
-def init_pop():
-    # print(len(pipes))
-    spec = []
-    for i in range(19):
-        del spec [:]
-        for j in range(len(pipes)):
-            spec.append(random.randint(0,1))
-        # print(spec)
-        # print("append")
-        populations.append(spec[:])
+# def init_pop():
+#     # print(len(pipes))
+#     spec = []
+#     for i in range(200):
+#         del spec [:]
+#         for j in range(len(pipes)):
+#             spec.append(random.randint(0,1))
+#         # print(spec)
+#         # print("append")
+#         populations.append(spec[:])
 
 def detect_leak(chromosome, line):
     # print(chromosome)
@@ -137,19 +138,40 @@ def detect_leak(chromosome, line):
     # print(leak)
     return leak
 
+def leak_count(pair):
+    return len(pair[0])
+
 def fitness(pop, line):
     # print(pop)
     # print(line[1])
     leak = []
     new_pop = []
     for i in range(len(pop)):
+        # print(i)
         leak.append(detect_leak(pop[i], line))
     # print (len(pop))
     # print (len(leak))
-    for i in range(len(pop)):
+    sorted_pop = [pop for _, pop in sorted(zip(leak,pop), key=leak_count)]
+    for i in range(len(sorted_pop)):
+        # for x in range(len(leak[i])):
+        #     print(leak[i][x])
         if (line[1] in leak[i]):
-            new_pop.append(pop[i])
+            new_pop.append(sorted_pop[i])
+    # for i in range(len(pop)):
+    #     if (pop[i] not in new_pop):
+    #         new_pop.append(pop[i])
+    # if (len(new_pop)< 200):
+    #     print(len(new_pop))
+    # if (len(new_pop) <10 and len(new_pop) > 0):
+    #     for i in range(len(new_pop)):
+    #         print new_pop[i]
     return new_pop
+
+def create_chromosome():
+    spec = []
+    for j in range(len(pipes)):
+        spec.append(random.randint(0,1))
+    return spec
 
 def sensor_count(chromosome):
     count = 0
@@ -158,23 +180,67 @@ def sensor_count(chromosome):
             count+=1
     return count
 
+def cross(parents):
+    children = []
+    parent_count = len(parents)
+    for i in range(parent_count/2):
+        children.append(parents[i][:10] + parents[i+(parent_count/2)][10:])
+    return children
+
+def mutate(pop):
+    for i in range(len(pop)):
+        for x in range(len(pop[i])):
+            if(random.randint(0,3) == 3):
+                pop[i][x] = (pop[i][x] + 1) %2
+    return pop
+
 def GA(pop):
     source = open(csv)
     lines = source.readlines()
     source.close()
     new_pop = []
+    # print(len(lines))
 
-    for i in range(1):
+    for i in range(len(lines)-9):
+        if (len(pop) <= 1):
+            print(i)
+        # if (len(pop) < 200):
+        #     print ("line: " + str(i))
+        children = []
         line = lines[i+9].split(',')
         # print(len(pop))
         # print (i)
+        # for i in range(len(pop)):
+        #     print (pop[i])
         new_pop = fitness(pop, line)
+        # print (len(new_pop))
+        new_pop.sort(key=sensor_count)
+        if(len(new_pop) < len(pop)):
+            for i in range(len(pop) - len(new_pop)):
+                new_pop.append(create_chromosome())
+        parents = new_pop[:(len(new_pop)/2)]
+        del new_pop[len(new_pop)*3/4:]
+        children = cross(parents)
+        children = mutate(children)
+        # print("parent count: " + str(len(parents)))
+        # print("pop count: " + str(len(pop)))
+
+        pop = []
+        pop.extend(new_pop)
+        pop.extend(children)
+        # print(len(pop))
+        # for i in range(len(pop)):
+        #     print(pop[i])
+
+    return pop[0]
+    # for i in range(len(parents)):    
+    #     print(parents[i])
         
+    # print (len(pop))
     # for i in range(len(pop)):
     #     print(pop[i])
     # print ('\n')
-    new_pop.sort(key=sensor_count)
-    new_pop = new_pop[:10]
+    
     # for i in range(len(new_pop)):
     #     print (new_pop[i])
 
@@ -191,10 +257,16 @@ junctions = make_junctions()
 pipes = make_pipes()
 make_junctions_connections()
 get_flow()
-init_pop()
+# init_pop()
+for i in range(pop_size):
+    populations.append(create_chromosome())
 # for i in range(len(populations)):
 #     print(populations[i])
-GA(populations)
+best = GA(populations)
+print(best)
+for i in range(len(best)):
+    if (best[i] == 1):
+        print(pipes[i].name)
 # pipes[4].clear_upstream()
 
 # for i in range(len(no_leak)):
