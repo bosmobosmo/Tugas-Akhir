@@ -74,7 +74,7 @@ def read_data():
     for i in range(0,nl):
         ss=lines[i].split('\t')
         if (junc):
-            if not ss[0]:
+            if (not ss[0] or ss[0] == '\n'):
                 junc = False
             else:
                 if (ss[0].find("ID") < 0):
@@ -83,7 +83,7 @@ def read_data():
                     else:
                         junctions.append(ss[0])
         if (pip):
-            if not ss[0]:
+            if (not ss[0] or ss[0] == '\n'):
                 pip = False
             else:
                 if (ss[0].find("ID") <0):
