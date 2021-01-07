@@ -123,7 +123,7 @@ for r in range(0,repeats):
         demands = getdemands(finaloutputfile+'.nodes.out')
 
         lf = demands[leakindices[l]]
-        opparams = [ec,lp,lf,rp] #emitter coeffiecient, leak position, leak flow, roughness
+        opparams = [ec,lp]
         sep = ","
         csvobs = sep.join(opparams+flows+pressure+demands)
         databasefile.write(csvobs+'\n')
