@@ -1,1 +1,7 @@
 try-results/
+*.out
+*.inp
+*.csv
+*.txt
+results.txt
+results.txt

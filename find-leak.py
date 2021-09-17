@@ -5,10 +5,18 @@ import os
 from datetime import datetime
 
 inp_file = sys.argv[1]
-csv_file = sys.argv[2]
-pop_size = int(sys.argv[3])
-generations = int(sys.argv[4])
-result = 'results.txt'
+pop_size = int(sys.argv[2])
+generations = int(sys.argv[3])
+ls = sys.argv[4]
+casecount = int(sys.argv[5])
+sensor_count = float(sys.argv[6])
+csv_file = './try-results-' + ls + '/experiment-simple.csv'
+pipe_weight = 'pipe_weight_' + ls + '.txt'
+
+# sensor_count = int(sys.argv[6])
+
+weight = open(pipe_weight, 'r')
+result = 'results ' + str(pop_size) + ' ' + str(generations) + ' ' + ls + '.txt'
 
 lines = []
 results = []
@@ -19,8 +27,16 @@ simulation_dir = './temp'
 correct = 0
 incorrect = 0
 junctions = []
+pipes = []
 cases = []
-pipe_count = 0
+sensors = []
+
+def place_sensor():
+    lines = weight.readlines()
+    for i in range(sensor_count):
+        sensors.append(lines[i].split()[0])
+    # for i in sensors:
+    #     print (i)
 
 def get_junctions():
     try:
@@ -30,7 +46,7 @@ def get_junctions():
     except:
         print ('Input file error')
     
-    global pipe_count
+    global pipes
     junc = False
     pip = False
     nl = len(lines)
@@ -48,7 +64,7 @@ def get_junctions():
                     pip = False
                 else:
                     if (ss[0].find("ID") < 0):
-                        pipe_count += 1
+                        pipes.append(ss[0])
             if (ss[0].find("JUNCTIONS") > -1):
                 junc = True
             if (ss[0].find("PIPES") > -1):
@@ -56,9 +72,10 @@ def get_junctions():
 
 def create_species():
     temp = []
-    for i in range(9):
+    for i in range(len(junctions)):
         gen = round(random.uniform(0,1),2)
         temp.append(gen)
+    # print(len(temp))
     return temp
 
 def initial_pop(size):
@@ -140,13 +157,17 @@ def getflows(linkfile):
 def find_fitness(species, flows):
     generate_temp()
     fitness = 0.0
+    # count = 0
     for i in range(len(species)):
         change('EMITTERS', str(junctions[i]), 1, species[i])
     subprocess.call(['java', '-cp', 'AwareEpanetNoDeps.jar', 'org.addition.epanet.EPATool', 'temp.inp'])
     species_flow = getflows('temp.inp.links.out')
     # print(species_flow)
     for i in range(len(flows)):
-        fitness = fitness + abs(float(flows[i]) - float(species_flow[i]))
+        if pipes[i] in sensors:
+            # print (count)
+            # count+=1
+            fitness = fitness + abs(float(flows[i]) - float(species_flow[i]))
     return round(fitness, 2)
 
 def mutate(chromosome):
@@ -162,7 +183,7 @@ def crossover(parent1, parent2):
     # print("parent 2: " + str(parent2))
     child = parent1[:cross_point] + parent2[cross_point:]
     # print("child: " + str(child))
-    mutate(child)
+    child = mutate(child)
     return child
 
 def GA(pop, flows):
@@ -184,7 +205,7 @@ def GA(pop, flows):
     for i in range(int(pop_size * 0.5)):  
         new_pop.append(sorted_pop[i])
     for i in range(int(pop_size * 0.25)):
-        new_pop.append(crossover(new_pop[i],sorted_pop[random.randint(0,len(pop)-1)]))
+        new_pop.append(crossover(sorted_pop[i],sorted_pop[random.randint(0,len(sorted_pop)-1)]))
     for i in range(int(pop_size * 0.25)):
         new_pop.append(create_species())
 
@@ -196,7 +217,7 @@ def check_result(species, answer):
     global incorrect
     species_copy = species[:]
     leak = []
-    for i in range(3):
+    for i in range(int(len(junctions)/3)):
         biggest_leak = species_copy.index(max(species_copy))
         leak.append(junctions[biggest_leak])
         species_copy[biggest_leak] = 0.0
@@ -214,7 +235,7 @@ def detect_leak(case):
     population = initial_pop(pop_size)
     # for i in range(len(population)):
     #     print (population[i])
-    for i in range(pipe_count):
+    for i in range(len(pipes)):
         flows.append(round(float(case[i+2]),2))
     for i in range(generations):
         population = GA(population, flows)
@@ -229,9 +250,11 @@ def detect_leak(case):
 
 start = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 get_junctions()
+sensor_count = int(len(pipes)*sensor_count)
 cases = get_cases()
-for i in range(100):
-    case = random.randint(9,len(cases))
+place_sensor()
+for i in range(casecount):
+    case = random.randint(len(junctions),len(cases))
     lines.append(case)
     results.append(detect_leak(cases[case-1]))
 end = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

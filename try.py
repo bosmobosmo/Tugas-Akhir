@@ -1,22 +1,61 @@
 from os import linesep
+from os import mkdir
+import os.path
 import sys
 import subprocess
 import time
 import random
 
 inputfile = sys.argv[1]
+leaksize = sys.argv[2]
 experimentname = 'experiment-simple'
-resultsdir = "./try-results/"
-databasedir = "./try-results/"
+if not os.path.isdir('./try-results-' + leaksize + '/'):
+    mkdir("./try-results-" + leaksize + "/")
+resultsdir = "./try-results-" + leaksize +"/"
+databasedir = "./try-results-" + leaksize + "/"
 databasename = experimentname+'.csv'
 
-ecrange = [0.48,0.52]
-leakpositions = ['1','2','3','4','5','6','7','8','9']
-leakindices = [0,1,2,3,4,5,6,7,8]
+ls = float(leaksize)
+ecrange = [ls-0.02, ls+0.02]
+junctions = []
+leakindices = []
 roughnessavg = 0.25
-repeats = 100
+repeats = 10
 
 start = time.time()
+
+def get_junctions():
+    try:
+        fileobj = open(inputfile,'r')
+        lines = fileobj.readlines()
+        fileobj.close()
+    except:
+        print ('Input file error')
+    
+    global junctions
+    # global pipes
+    junc = False
+    # pip = False
+    nl = len(lines)
+    for i in range(nl):
+        ss=lines[i].split()
+        if (ss):
+            if (junc):
+                if (len(ss) <= 1):
+                    junc = False
+                else:
+                    if (ss[0].find("ID") < 0):
+                        junctions.append(ss[0])
+            # if (pip):
+            #     if (len(ss) <= 1):
+            #         pip = False
+            #     else:
+            #         if (ss[0].find("ID") < 0):
+            #             pipes.append(ss[0])
+            if (ss[0].find("JUNCTIONS") > -1):
+                junc = True
+            # if (ss[0].find("PIPES") > -1):
+            #     pip = True
 
 def variationRange(n1, n2):
     return round(random.uniform(n1,n2),2)
@@ -102,11 +141,13 @@ try:
 except:
     print 'Database file open error'
 
+get_junctions()
+
 for r in range(0,repeats):
-    for l in range(0,len(leakpositions)):
+    for l in range(0,len(junctions)):
         rp = str(roughnessavg)
         fid=1
-        lp = leakpositions[l]
+        lp = junctions[l]
         if r == 0:
             ec = str(0.0)
         else:
@@ -122,15 +163,15 @@ for r in range(0,repeats):
         pressure = getpressures(finaloutputfile+'.nodes.out')
         demands = getdemands(finaloutputfile+'.nodes.out')
 
-        lf = demands[leakindices[l]]
+        # lf = demands[leakindices[l]]
         opparams = [ec,lp]
         sep = ","
         csvobs = sep.join(opparams+flows+pressure+demands)
         databasefile.write(csvobs+'\n')
 databasefile.close()
-end = time.time()
-elapsed = end - start
-print 'Finished in :' + str(elapsed) + ' seconds'
+# end = time.time()
+# elapsed = end - start
+# print 'Finished in :' + str(elapsed) + ' seconds'
 
 
 
